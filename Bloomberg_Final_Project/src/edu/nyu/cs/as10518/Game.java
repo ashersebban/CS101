@@ -2,13 +2,13 @@ package edu.nyu.cs.as10518;
 
 public class Game {
 	
-	public int x = 7;
-	
+	public static float x = 7;
+
 	public static void main(String[] args) {
 		
-		System.out.println("Hello world!");
+		System.out.println("\nHello world!\n");
 		
-		
+		System.out.println(x);
 	}
 
 }
