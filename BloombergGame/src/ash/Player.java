@@ -2,7 +2,7 @@ package ash;
 
 public class Player {
 	
-	private int offset1 = 15;
+	private int offset1 = 18;
 	private int offset2 = 30;
 
 	//player variables

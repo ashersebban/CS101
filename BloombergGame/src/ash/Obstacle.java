@@ -5,88 +5,112 @@ import java.util.Arrays;
 
 public class Obstacle {
 	
+	//CLASS
 	private int numLayers = 8;
-	private int obstacleX;
-	private int obstacleSpeed;
-	
-	
-
 	private Random rand = new Random();
 	private int[] layers = new int[numLayers];
-	private int[] final_array= new int[layers.length];
+	private int[] wall_values = new int[layers.length];
+	private Brick[] wall_bricks = new Brick[wall_values.length];
 	
+	//OBJECT
+	private int posX;
+	private int width = 50;
+	private int height = 50;
+	private int speed ;
+	
+	
+	//RANDOM OBSTACLES
 	private int[] generateRandomObstacles(int[] layers) {
-		System.out.println("Random Obstacles:");
 		for(int i = 0;i<layers.length;++i) {
 			int rand_on_off = rand.nextInt(2);
-			System.out.println(rand_on_off);
-			final_array[i] = rand_on_off;
+			wall_values[i] = rand_on_off;
 		}
-		System.out.println(); 
-		return final_array;
+		return wall_values;
 		
 	}
 	
+	//TRIANGLE OBSTACLES
 	private int[] generateTriangleObstacles(int[] layers) {
-		System.out.println("Triangle Obstacles:");
-		Arrays.fill(final_array,1);
-		int TOType = rand.nextInt(3);
-		System.out.println("TOTYPE: "+TOType);
-		if(TOType == 0)final_array[0] = 0;
-		else if(TOType == 1) final_array[final_array.length-1] = 0;
-		else {
-			final_array[0] = 0;
-			final_array[final_array.length-1] = 0;
-		}
-		for(int i = 0;i<final_array.length;i++) System.out.println(final_array[i]);
-		System.out.println();
-		return final_array;
+		Arrays.fill(wall_values,1);
+		int TOType = rand.nextInt(2);
+		if(TOType == 0)wall_values[0] = 3;
+		else if(TOType == 1) wall_values[wall_values.length-1] = 3;
+//		else {
+//			wall_values[0] = 0;
+//			wall_values[wall_values.length-1] = 0;
+//		}
+
+		return wall_values;
 	}
 	
+	//CIRCLE OBSTACLES
 	private int[] generateCircleObstacles(int[] layers) {
-		int barrierGap = rand.nextInt(layers.length-2)+1;
-		System.out.println("Circle Obstacles:");
-		System.out.println("Gap from top: "+barrierGap);
-		
-		for(int i = 0;i< final_array.length;i++) {
-			if(i<=barrierGap-1) {
-				final_array[i]=0;
-			}
-			else final_array[i] = 1;
-			System.out.println(final_array[i]);
-		}
-		System.out.println();
-		return final_array;
+		int circleGap = rand.nextInt(layers.length);
+		Arrays.fill(wall_values,1);
+		wall_values[circleGap] = 4;
+		if(!(circleGap==0))wall_values[circleGap-1]= 4;
+		if(!(circleGap==wall_values.length-1))wall_values[circleGap+1]=4;
+		//else wall_values[circleGap+1]= 0;
+		return wall_values;
 	}
 	
-	public int[] generateNewWall() {
-		int numOfObs = 3;
+	//SQUARE OBSTACLES
+	private int[] generateSquareObstacles(int[] layers) {
+		int squareGap = rand.nextInt(layers.length);
+		Arrays.fill(wall_values,1);
+		wall_values[squareGap] = 2;
+		return wall_values;
+	}
+	
+	
+	
+	public Brick[] generateNewWall() {
+		int numOfObs = 4;
 		int randObs = rand.nextInt(numOfObs)+1;
-		if(randObs == 1)return generateRandomObstacles(layers);
-		else if(randObs ==2)return generateTriangleObstacles(layers);
-		else if (randObs ==3)return generateCircleObstacles(layers);
-		else return new int[0];
+		//if(randObs == 1)return generateRandomObstacles(layers);
+		if(randObs == 1)wall_values = generateSquareObstacles(layers);
+		else if(randObs == 2)wall_values = generateTriangleObstacles(layers);
+		else if (randObs == 3)wall_values = generateCircleObstacles(layers);
+		else if(randObs == 4)wall_values = generateSquareObstacles(layers);
+		
+		for(int i = 0; i<wall_values.length;i++) {
+			Brick newBrick = new Brick(posX,height/numLayers*i, width, height/numLayers,wall_values[i]);
+			wall_bricks[i] = newBrick;
+		}
+		return wall_bricks;
+		
+		
 	}
 	
+	//MAIN
 	public static void main(String[] args) {
 		
-		Obstacle o = new Obstacle (400);
+		Obstacle o = new Obstacle (400,600);
 		o.generateNewWall();
 		
 		
 	}
 	
-	public Obstacle(int w) {
-		this.obstacleX = w + 50;
-		this.obstacleSpeed = w/100;
+	//CONSTRUCTOR 
+	public Obstacle(int w,int h) {
+		this.posX = w + 50;
+		this.width = 50;
+		this.height = h;
+		this.speed = w/150;
+		
 	}
 	
-	public int getObstacleX() {
-		return obstacleX;
+	
+	//GETTERS AND SETTERS
+	public int getPosX() {
+		return posX;
 	}
 
-	public void setObstacleX(int obstableX) {
-		this.obstacleX = obstableX;
+	public void setPosX(int posX) {
+		this.posX = posX;
+		for(int i = 0; i< wall_bricks.length;i++) {
+			wall_bricks[i].setPosX(this.posX);
+		}
 	}
 
 	public int getNumLayers() {
@@ -97,13 +121,22 @@ public class Obstacle {
 		this.numLayers = numLayers;
 	}
 
-	public int getObstacleSpeed() {
-		return obstacleSpeed;
+	public int getSpeed() {
+		return speed;
 	}
 
-	public void setObstacleSpeed(int obstacleSpeed) {
-		this.obstacleSpeed = obstacleSpeed;
+	public void setSpeed(int speed) {
+		this.speed = speed;
 	}
+
+	public int getWidth() {
+		return width;
+	}
+
+	public void setWidth(int width) {
+		this.width = width;
+	}
+	
 	
 	
 	
