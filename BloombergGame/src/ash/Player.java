@@ -1,129 +1,142 @@
 package ash;
 
 public class Player {
-	
-	private int offset1 = 18;
-	private int offset2 = 30;
 
 	//player variables
-	private int playerWidth;
-	private int playerHeight;
-	private int playerX;
-	private int playerY;
-	private String playerShape;
-	private int[] playerColor = new int[3];
+	private int width;
+	private int height;
+	private int posX;
+	private int posY;
+	private int currentLayer;
+	private String shape;
+	private int[] fill = new int[3];
 	private boolean reachedMaxHeight;
 	private boolean reachedMinHeight;
-	private int playerVelocity;
 	
-	public int getPlayerVelocity() {
-		return playerVelocity;
-	}
-
-	public void setPlayerVelocity(int playerVelocity) {
-		this.playerVelocity = playerVelocity;
-	}
-
-	//SQUARE ONLY
-	private int squareVertical;
-	
-	public int getSquareVertical() {
-		return squareVertical;
-	}
-
-	public void setSquareVertical(int squareVertical) {
-		this.squareVertical = squareVertical;
-	}
-
-	public int getCircleJumpSpeed() {
-		return circleJumpSpeed;
-	}
-
-	public void setCircleJumpSpeed(int circleJumpSpeed) {
-		this.circleJumpSpeed = circleJumpSpeed;
-	}
-
-	public int getCircleFallSpeed() {
-		return circleFallSpeed;
-	}
-
-	public void setCircleFallSpeed(int circleFallSpeed) {
-		this.circleFallSpeed = circleFallSpeed;
-	}
-
-	public int getTriangleVertical() {
-		return triangleVertical;
-	}
-
-	public void setTriangleVertical(int triangleVertical) {
-		this.triangleVertical = triangleVertical;
-	}
-
-	public boolean isUpsidedown() {
-		return upsidedown;
-	}
-
-	public void setUpsidedown(boolean upsidedown) {
-		this.upsidedown = upsidedown;
-	}
-
 	//CIRCLE ONLY
 	private int circleJumpSpeed;
 	private int circleFallSpeed;
 	
 	//TRIANGLE ONLY
-	private int triangleVertical;
 	private boolean upsidedown;
 	
 	
-	public int getPlayerWidth() {
-		return playerWidth;
+	//CONSTRUCTOR
+	public Player(int sizeX, int sizeY) {
+		this.width = sizeY/GameWindow.NUM_LAYERS-10;
+		this.height = sizeY/GameWindow.NUM_LAYERS-10;
+		this.posX = width*2;
+		this.posY = sizeY-height+height/2;
+		this.shape = "Circle";
+		this.fill[0] = 0;
+		this.fill[1] = 0;
+		this.fill[2] = 0;
+		this.reachedMinHeight = true; 
+		this.reachedMaxHeight = false;
+		
+		//CIRCLE ONLY
+		this.circleJumpSpeed = GameWindow.SIZE_Y/60;
+		this.circleFallSpeed = GameWindow.SIZE_Y/65;
+		
+		//TRIANGLE ONLY
+		this.upsidedown = false;
+		
+	}//end of constructor
+	
+	//NEEDS WORK ... DOES NOT WORK
+	public void moveToLayer(int targetLayer) {
+		
+		int nextLayer = GameWindow.SIZE_Y/GameWindow.NUM_LAYERS;
+		
+		if(currentLayer < targetLayer) {
+			for(int i=currentLayer;i<=targetLayer;++i) {
+				if(!reachedMaxHeight) {
+					currentLayer = i;
+					posY -= nextLayer;
+					}
+				else currentLayer = GameWindow.NUM_LAYERS;
+			}
+		}
+		else if(currentLayer > targetLayer) {
+			for(int i=currentLayer;i>=targetLayer;--i) {
+				if(!reachedMinHeight) {
+					currentLayer = i;
+					posY += nextLayer;
+				}
+				else currentLayer = 0;
+			}
+		}
+	}
+	
+	//USED FOR DEBUGGING
+	public void debugUpdate() {
+		System.out.println("Shape: "+shape);
+		System.out.print(" posY: "+posY);
+		System.out.print(" currentLayer: "+currentLayer);
+		System.out.print(" max: "+reachedMaxHeight);
+		System.out.print(" min: "+reachedMinHeight);
+		System.out.println();
+				
+	}
+	
+	//GETTERS AND SETTERS
+	
+	public int getWidth() {
+		return width;
 	}
 
-	public void setPlayerWidth(int playerWidth) {
-		this.playerWidth = playerWidth;
+	public void setWidth(int width) {
+		this.width = width;
 	}
 
-	public int getPlayerHeight() {
-		return playerHeight;
+	public int getHeight() {
+		return height;
 	}
 
-	public void setPlayerHeight(int playerHeight) {
-		this.playerHeight = playerHeight;
+	public void setHeight(int height) {
+		this.height = height;
+	}
+	
+	public int getPosX() {
+		return posX;
 	}
 
-	public int getPlayerX() {
-		return playerX;
+	public void setPosX(int posX) {
+		this.posX = posX;
 	}
 
-	public void setPlayerX(int playerX) {
-		this.playerX = playerX;
+	public int getPosY() {
+		return posY;
 	}
 
-	public int getPlayerY() {
-		return playerY;
+	public void setPosY(int posY) {
+		this.posY = posY;
+	}
+	
+	public int getCurrentLayer() {
+		return currentLayer;
 	}
 
-	public void setPlayerY(int playerY) {
-		this.playerY = playerY;
+	public void setCurrentLayer(int currentLayer) {
+		this.currentLayer = currentLayer;
 	}
 
-	public String getPlayerShape() {
-		return playerShape;
+	public String getShape() {
+		return shape;
 	}
 
-	public void setPlayerShape(String playerShape) {
-		this.playerShape = playerShape;
+	public void setShape(String shape) {
+		this.shape = shape;
+	}
+	
+	public int[] getFill() {
+		return fill;
 	}
 
-	public int[] getPlayerColor() {
-		return playerColor;
+	public void setFill(int[] fill) {
+		this.fill = fill;
 	}
-
-	public void setPlayerColor(int[] playerColor) {
-		this.playerColor = playerColor;
-	}
-
+	
 	public boolean isReachedMaxHeight() {
 		return reachedMaxHeight;
 	}
@@ -140,29 +153,31 @@ public class Player {
 		this.reachedMinHeight = reachedMinHeight;
 	}
 	
-	public Player(int w, int h) {
-		this.playerWidth = w/offset1;
-		this.playerHeight = w/offset1;
-		this.playerX = w/offset1;
-		this.playerY = h - this.playerHeight - h/offset2;
-		this.playerShape = "Circle";
-		this.playerColor[0] = 0;
-		this.playerColor[1] = 0;
-		this.playerColor[2] = 0;
-		this.reachedMinHeight = true; 
-		this.reachedMaxHeight = false;
-		this.playerVelocity = 0;
-		
-		
-		//SQUARE ONLY
-		this.squareVertical = h/80;
-		
-		//CIRCLE ONLY
-		this.circleJumpSpeed = 15;
-		this.circleFallSpeed = circleJumpSpeed/3;
-		
-		//TRIANGLE ONLY
-		this.triangleVertical = h/15;
-		this.upsidedown = false;
+	public int getCircleJumpSpeed() {
+		return circleJumpSpeed;
 	}
+
+	public void setCircleJumpSpeed(int circleJumpSpeed) {
+		this.circleJumpSpeed = circleJumpSpeed;
+	}
+
+	public int getCircleFallSpeed() {
+		return circleFallSpeed;
+	}
+
+	public void setCircleFallSpeed(int circleFallSpeed) {
+		this.circleFallSpeed = circleFallSpeed;
+	}
+
+	public boolean isUpsidedown() {
+		return upsidedown;
+	}
+
+	public void setUpsidedown(boolean upsidedown) {
+		this.upsidedown = upsidedown;
+	}
+	
+	
+	
+	
 }

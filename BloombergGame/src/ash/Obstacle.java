@@ -6,40 +6,28 @@ import java.util.Arrays;
 public class Obstacle {
 	
 	//CLASS
-	private int numLayers = 8;
 	private Random rand = new Random();
-	private int[] layers = new int[numLayers];
-	private int[] wall_values = new int[layers.length];
+	private int[] wall_values = new int[GameWindow.NUM_LAYERS];
 	private Brick[] wall_bricks = new Brick[wall_values.length];
 	
 	//OBJECT
-	private int posX;
+	private double posX;
 	private int width = 50;
 	private int height = 50;
-	private int speed ;
+	private double speed = 4.7;
 	
 	
-	//RANDOM OBSTACLES
-	private int[] generateRandomObstacles(int[] layers) {
-		for(int i = 0;i<layers.length;++i) {
-			int rand_on_off = rand.nextInt(2);
-			wall_values[i] = rand_on_off;
-		}
-		return wall_values;
-		
-	}
 	
 	//TRIANGLE OBSTACLES
 	private int[] generateTriangleObstacles(int[] layers) {
 		Arrays.fill(wall_values,1);
-		int TOType = rand.nextInt(2);
+		int TOType = rand.nextInt(3);
 		if(TOType == 0)wall_values[0] = 3;
 		else if(TOType == 1) wall_values[wall_values.length-1] = 3;
-//		else {
-//			wall_values[0] = 0;
-//			wall_values[wall_values.length-1] = 0;
-//		}
-
+		else {
+			wall_values[0] = 3;
+			wall_values[wall_values.length-1] = 3;
+		}
 		return wall_values;
 	}
 	
@@ -65,67 +53,78 @@ public class Obstacle {
 	
 	
 	public Brick[] generateNewWall() {
-		int numOfObs = 4;
+		int numOfObs = 3;
 		int randObs = rand.nextInt(numOfObs)+1;
 		//if(randObs == 1)return generateRandomObstacles(layers);
-		if(randObs == 1)wall_values = generateSquareObstacles(layers);
-		else if(randObs == 2)wall_values = generateTriangleObstacles(layers);
-		else if (randObs == 3)wall_values = generateCircleObstacles(layers);
-		else if(randObs == 4)wall_values = generateSquareObstacles(layers);
+		if(randObs == 1)wall_values = generateSquareObstacles(wall_values);
+		if(randObs == 2)wall_values = generateTriangleObstacles(wall_values);
+		if (randObs == 3)wall_values = generateCircleObstacles(wall_values);
 		
 		for(int i = 0; i<wall_values.length;i++) {
-			Brick newBrick = new Brick(posX,height/numLayers*i, width, height/numLayers,wall_values[i]);
+			Brick newBrick = new Brick(posX,height/GameWindow.NUM_LAYERS*i+height/GameWindow.NUM_LAYERS/2, width, height/GameWindow.NUM_LAYERS,wall_values[i]);
 			wall_bricks[i] = newBrick;
 		}
 		return wall_bricks;
 		
+	}
+	
+	public Brick[] generateNewWall(int obstacleType) {
+		if(obstacleType == 1) {
+			wall_values = generateSquareObstacles(wall_values);
+			speed = 8;
+		}
+		if(obstacleType == 2) {
+			wall_values = generateTriangleObstacles(wall_values);
+			speed = 15;
+		}
+		if (obstacleType == 3) {
+			wall_values = generateCircleObstacles(wall_values);
+			speed = 9;
+		}
+		
+		for(int i = 0; i<wall_values.length;i++) {
+			Brick newBrick = new Brick(posX,height/GameWindow.NUM_LAYERS*i+height/GameWindow.NUM_LAYERS/2, width, height/GameWindow.NUM_LAYERS,wall_values[i]);
+			wall_bricks[i] = newBrick;
+		}
+		return wall_bricks;
 		
 	}
+	
 	
 	//MAIN
 	public static void main(String[] args) {
 		
-		Obstacle o = new Obstacle (400,600);
-		o.generateNewWall();
 		
 		
 	}
 	
 	//CONSTRUCTOR 
-	public Obstacle(int w,int h) {
-		this.posX = w + 50;
+	public Obstacle(double sizeX,int sizeY) {
+		this.posX = sizeX*2;
 		this.width = 50;
-		this.height = h;
-		this.speed = w/150;
+		this.height = sizeY;
+		this.speed = speed;
 		
 	}
 	
 	
 	//GETTERS AND SETTERS
-	public int getPosX() {
+	public double getPosX() {
 		return posX;
 	}
 
-	public void setPosX(int posX) {
+	public void setPosX(double posX) {
 		this.posX = posX;
 		for(int i = 0; i< wall_bricks.length;i++) {
 			wall_bricks[i].setPosX(this.posX);
 		}
 	}
 
-	public int getNumLayers() {
-		return numLayers;
-	}
-
-	public void setNumLayers(int numLayers) {
-		this.numLayers = numLayers;
-	}
-
-	public int getSpeed() {
+	public double getSpeed() {
 		return speed;
 	}
 
-	public void setSpeed(int speed) {
+	public void setSpeed(double speed) {
 		this.speed = speed;
 	}
 
@@ -136,10 +135,6 @@ public class Obstacle {
 	public void setWidth(int width) {
 		this.width = width;
 	}
-	
-	
-	
-	
-	
+
 
 }

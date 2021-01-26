@@ -2,7 +2,7 @@ package ash;
 
 public class Brick {
 	
-	private int posX;
+	private double posX;
 	private int posY; 
 	private int width;
 	private int height;
@@ -13,7 +13,7 @@ public class Brick {
 //	private int health;
 //	private String material;
 	
-	public Brick(int x,int y,int width, int height, int value) {
+	public Brick(double x,int y,int width, int height, int value) {
 		
 		this.value = value;
 		this.posX = x;
@@ -52,11 +52,11 @@ public class Brick {
 		
 	}//end of constructor 
 
-	public int getPosX() {
+	public double getPosX() {
 		return posX;
 	}
 
-	public void setPosX(int posX) {
+	public void setPosX(double posX) {
 		this.posX = posX;
 	}
 

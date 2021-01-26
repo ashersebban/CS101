@@ -1,6 +1,7 @@
 package ash;
 
 import processing.core.*;
+import java.util.Arrays;
 
 /**
  * A simple class that inherits from Processing's PApplet class and displays an oscillating circle that bounces back and forth
@@ -9,37 +10,35 @@ import processing.core.*;
  */
 public class GameWindow extends PApplet {
 	
-	//instance properties
-	
 	//constants that hold the width and height of the window
-	final private int w = 600;
-	final private int h = 400;
-
-	//window variables
-	final private int ceiling = 0;
-	final private int floor = h;
-	final private int leftWall = 0;
-	final private int rightWall = w;
+	final private int sizeX = 600;
+	final private int sizeY = 400;
+	
+	public static int SIZE_X = 600;
+	public static int SIZE_Y = 400;
+	public static final int NUM_LAYERS = 8;
+	private int layerHeight = SIZE_Y/NUM_LAYERS;
+	private int[] layer_y_values = new int[NUM_LAYERS];
+	private int[] player_y_values = new int[NUM_LAYERS];
 	
 	//game variables
-	int counter = 0;
-	boolean collision;
+	boolean collision = false;
 	boolean gameOver = false;
-	int f=0;
 	int score = 0;
+	int highscore = 0;
 	boolean highscoreReached = false;
-	
-	
 	
 	Player player1;
 	Obstacle obstacle1;
 	Brick[] newWall;
+	
 	
 	/**
 	 * This method is automatically called by Java when the program first starts.
 	 * @param args any command line arguments (not used)
 	 */
 	public static void main(String[] args) {
+		
 		//must call PApplet's static main method, and supply the full package and class name of this class as an argument
 		PApplet.main("ash.GameWindow");
 	}
@@ -49,234 +48,491 @@ public class GameWindow extends PApplet {
 	 */
 	public void settings() {
 		//set the site of the window in pixels to the values of the instance properties w and h
-		this.size(this.w, this.h); 
-
+		this.size(this.sizeX, this.sizeY); 
 	}
-	
+
 	/**
 	 * Method to compose the first 'frame' of the app
 	 */
 	public void setup() {
 		
-		player1 = new Player(w,h);
-		
-		obstacle1 = new Obstacle(w,h);
+		setDefaults();
+		player1 = new Player(sizeX,sizeY);
+		obstacle1 = new Obstacle(sizeX,sizeY);
 		newWall = obstacle1.generateNewWall();
 		
-		//fill the background with this color (specified in 8-bit R, G, B values)
-		this.background(255, 255, 255); //white
-
-		//set the fill color (the color which solid shapes will be filled with)
-		this.fill(player1.getPlayerColor()[0],player1.getPlayerColor()[1],player1.getPlayerColor()[2]); 
 		
+		generateLayers();
+		
+		for(int i = 0 ; i< player_y_values.length;i++) {
+			System.out.println("Index: "+i+" Value: "+player_y_values[i]);
+		}
+			
 	}
-	
-	
 	
 	/**
 	 * This method is called repeatedly many times per second (usually 30 times per second by default) for the lifetime of the app.
 	 */
 	public void draw() {
 		
-		float offset = 0; 
+		setDefaults();
 		
-		ellipseMode(CORNER);
-		rectMode(CORNER);
+		drawBackground();
+		drawObstacle();
+		drawPlayer();
+		drawScoreBoard();
+		
+		if(collision()) {
+			collision = true;
+			gameOver = true;
+			gameOverMessage();
+		}
+		else{
+			updateObstacleX();
+			updatePlayerY();
+			updateScore();
+		}
+	}
+	
+	/**
+	 * This method draws the background of the game and calls the drawLayerLines() function
+	 * @param args any command line arguments (not used)
+	 */
+	public void setDefaults() {
+		ellipseMode(CENTER);
+		rectMode(CENTER);
+		fill(255);
+		stroke(0);
+	}
+	
+	/**
+	 * This method draws the background of the game and calls the drawLayerLines() function
+	 * @param args any command line arguments (not used)
+	 */
+	public void generateLayers() {
+		
+		for(int i = 0; i < layer_y_values.length;i++) {
+			
+			layer_y_values[i] = SIZE_Y-(i*layerHeight);
+			player_y_values[i] = SIZE_Y-(i*layerHeight) - layerHeight/2;
+		}
+	}
+	
+	/**
+	 * This method draws the background of the game and calls the drawLayerLines() function
+	 * @param args any command line arguments (not used)
+	 */
+	public void drawBackground() {
 		
 		//fill the background with this color (specified in 8-bit R, G, B values)
 		this.background(255, 255, 255); //white
 		
-		//set the fill color (the color which solid shapes will be filled with)
-		this.fill(player1.getPlayerColor()[0],player1.getPlayerColor()[1],player1.getPlayerColor()[2]); 
+		drawLayerLines(true);
 		
-		//COLLISION CHECK
-		collision = collision();
-		if(collision) {
-			gameOverMessage();
-		}
+	}
+	
+	/**
+	 * This method draws a part of the background called the layer lines
+	 * The layers lines are used for debugging and will be commented out when the game is in its final version
+	 * @param args boolean true shows player lines in red, false only shows layer lines
+	 */
+	public void drawLayerLines(boolean player){
 		
-		for(int i=0;i<8;i++) {
+		for(int i=0;i<layer_y_values.length;i++) {
 			stroke(0);
-			line(0,floor-offset,w,floor-offset);
-			offset += floor/8;
+			fill(0);
+			line(30,layer_y_values[i],sizeX,layer_y_values[i]);
+			textSize(10);
+			text(layer_y_values[i],10,layer_y_values[i]+2);
+			if(player) {
+				stroke(255,0,0);
+				fill(255,0,0);
+				line(30,player_y_values[i],sizeX,player_y_values[i]);
+				text(player_y_values[i],10,player_y_values[i]+2);
+			}
 		}
+		setDefaults();
+	}
+	
+	/**
+	 * This method draws the obstacle with a color and changing X position (moving left)
+	 * The setDefaults() method is used as a safety precaution in case the rectMode() carries out of the function
+	 * @param args any command line arguments (not used)
+	 */
+	public void drawObstacle() {
 		
-		
+		rectMode(CENTER);
 		//OBSTACLE
-		for(int i=0;i<obstacle1.getNumLayers();i++) {
+		for(int i=0;i<GameWindow.NUM_LAYERS;i++) {
+			//color
 			fill(newWall[i].getFill()[0],newWall[i].getFill()[1],newWall[i].getFill()[2]);
-			rect(newWall[i].getPosX(),newWall[i].getPosY(),newWall[i].getWidth(),newWall[i].getHeight());
-		}
-	
-		if(collision == false) {
-			obstacle1.setPosX(obstacle1.getPosX()-obstacle1.getSpeed());
-			if(obstacle1.getPosX() < -50) {
-				newWall = obstacle1.generateNewWall();
-				obstacle1.setPosX(w+50);
-				
-			}
-		}
-		
-		
-		//DRAW SHAPE BASED ON PLAYER SHAPES
-		if(player1.getPlayerShape().equalsIgnoreCase("Square"))rect(player1.getPlayerX(),player1.getPlayerY(),player1.getPlayerWidth(),player1.getPlayerHeight());
-		else if(player1.getPlayerShape().equalsIgnoreCase("Circle"))ellipse(player1.getPlayerX(),player1.getPlayerY(),player1.getPlayerWidth(),player1.getPlayerHeight());
-		else if(player1.getPlayerShape().equalsIgnoreCase("Triangle")) {
-			if(!player1.isUpsidedown())triangle(player1.getPlayerX(),player1.getPlayerY()+player1.getPlayerHeight(),player1.getPlayerWidth()+player1.getPlayerX(),player1.getPlayerY()+player1.getPlayerHeight(),player1.getPlayerX()+player1.getPlayerWidth()/2,player1.getPlayerY());
-			else if(player1.isUpsidedown())triangle(player1.getPlayerX(),player1.getPlayerY(),player1.getPlayerWidth()+player1.getPlayerX(),player1.getPlayerY(),player1.getPlayerX()+player1.getPlayerWidth()/2,player1.getPlayerY()+player1.getPlayerHeight());
-		}
-		
-		//PLAYER VARIABLES 2
-		int topOfPlayer = player1.getPlayerY();
-		int bottomOfPlayer = player1.getPlayerY() + player1.getPlayerHeight();
-		
-		
-		//CANNOT MOVE PAST CEILING
-		if(topOfPlayer<= ceiling) {
-			player1.setReachedMaxHeight(true);
-			player1.setPlayerY(ceiling);
-		}
-		else player1.setReachedMaxHeight(false);
-		
-		//CANNOT MOVE PAST FLOOR
-		if(bottomOfPlayer >= floor-10) {
-			player1.setReachedMinHeight(true);
-			player1.setPlayerY(floor - player1.getPlayerHeight() - 10);
-		}
-		else player1.setReachedMinHeight(false);
-		
-		//MOVEMENT 2
-		if(!collision) {
-			//TRIANGLE
-			if(player1.getPlayerShape() == "Triangle") {
-				//GENERAL MOVEMENT
-				player1.setPlayerY(player1.getPlayerY() + player1.getPlayerVelocity()); 
-				if(player1.isReachedMaxHeight()||player1.isReachedMinHeight())player1.setPlayerVelocity(0);
-			}
 			
-			//SQUARE
-			else if(player1.getPlayerShape() == "Square") {
-				//GENERAL MOVEMENT
-				player1.setPlayerY(player1.getPlayerY() + player1.getPlayerVelocity()); 
-				if((player1.isReachedMaxHeight()||player1.isReachedMinHeight()) || (player1.getPlayerY()%(h/obstacle1.getNumLayers())==0 && !keyPressed)) {
-					player1.setPlayerVelocity(0);
-				}
-			}
-			
-			//CIRCLE
-			else if(player1.getPlayerShape() == "Circle") {
-				if(keyPressed && keyCode == UP) {
-					player1.setPlayerY(player1.getPlayerY()-player1.getCircleJumpSpeed());
-				}
-				if(keyPressed && keyCode == DOWN) {
-					player1.setPlayerY(player1.getPlayerY()+player1.getCircleJumpSpeed());
-				}
-				else player1.setPlayerY(player1.getPlayerY()+player1.getCircleFallSpeed());
-			}
+			//shape and position
+			rect((float)(newWall[i].getPosX()),newWall[i].getPosY(),newWall[i].getWidth(),newWall[i].getHeight());
 		}
 	}
+	
+	/**
+	 * This method draws the player with a color and changing Y position (moving up or down)
+	 * Drawing method changes based on whether the user is a Square, Circle, or Triangle
+	 * The Triangle also has two versions: upside down (when on the ceiling) and right side up (When on the floor)
+	 * @param args any command line arguments (not used)
+	 */
+	public void drawPlayer() {
+		
 
-	public void keyReleased() {
-		//MOVEMENT
-		if(!collision()) {
-			//TRIANGLE
-			if(player1.getPlayerShape() == "Triangle") {
-				//UP
-				if(player1.isReachedMinHeight() && player1.getPlayerVelocity() == 0 && keyCode == UP) {
-					player1.setPlayerVelocity(player1.getTriangleVertical()*-1) ;
-					player1.setUpsidedown(true);
-					player1.setReachedMaxHeight(false);
-					player1.setReachedMinHeight(false);
-				}
-				//DOWN
-				else if(player1.isReachedMaxHeight()  && player1.getPlayerVelocity() == 0 && keyCode == DOWN) {
-					player1.setPlayerVelocity(player1.getTriangleVertical()) ;
-					player1.setUpsidedown(false);
-					player1.setReachedMaxHeight(false);
-					player1.setReachedMinHeight(false);
-				}
-			}
-			//SQUARE
-			else if(player1.getPlayerShape() == "Square") {
-				//UP
-				if(!player1.isReachedMaxHeight() && player1.getPlayerVelocity() == 0 && keyCode == UP) {
-					player1.setPlayerVelocity(player1.getSquareVertical()*-1) ;
-				}
-				//DOWN
-				else if(!player1.isReachedMinHeight()  && player1.getPlayerVelocity() == 0 && keyCode == DOWN) {
-					player1.setPlayerVelocity(player1.getSquareVertical()) ;
-				}
-			}
-			//changes shape
-			if(key == 'c') {
-				if(player1.getPlayerShape().equalsIgnoreCase("Square")) {
-					player1.setPlayerShape("Triangle");
-				}
-				else if (player1.getPlayerShape().equalsIgnoreCase("Triangle")) {
-					player1.setPlayerShape("Circle");
-				}
-				else if (player1.getPlayerShape().equalsIgnoreCase("Circle")) {
-					player1.setPlayerShape("Square");
-				}
-			}
+		rectMode(CENTER);
+		//set the fill color (the color which solid shapes will be filled with)
+		this.fill(player1.getFill()[0],player1.getFill()[1],player1.getFill()[2]);
+		
+		//IF PLAYER IS A CIRCLE
+		if(player1.getShape().equalsIgnoreCase("Circle")) {
+			this.fill(0,255,0);
+			ellipse(player1.getPosX(),player1.getPosY(),player1.getWidth(),player1.getHeight());
+		}
+		
+		//IF PLAYER IS A SQUARE
+		else if(player1.getShape().equalsIgnoreCase("Square")) {
+			this.fill(0,0,255);
+			rect(player1.getPosX(),player1.getPosY(),player1.getWidth(),player1.getHeight());
+		}
 			
-			player1.setPlayerY(player1.getPlayerY() + player1.getPlayerVelocity()); 
-		}	
+		
+		//IF PLAYER IS A TRIANGLE
+		else if(player1.getShape().equalsIgnoreCase("Triangle")) {
+			this.fill(255,0,0);
+			if(!player1.isUpsidedown())triangle(player1.getPosX(),player1.getPosY()+player1.getHeight()/2,player1.getWidth()+player1.getPosX(),player1.getPosY()+player1.getHeight()/2,player1.getPosX()+player1.getWidth()/2,player1.getPosY()-player1.getHeight()/2);
+			else if(player1.isUpsidedown())triangle(player1.getPosX(),player1.getPosY()-player1.getHeight()/2,player1.getWidth()+player1.getPosX(),player1.getPosY()-player1.getHeight()/2,player1.getPosX()+player1.getWidth()/2,player1.getPosY()+player1.getHeight()/2);
+		}
+		
 	}
 	
+	/**
+	 * This method draws the score in the window and visually outputs whether the highScore was reached (turns the score box yellow)
+	 * 
+	 * @param args any command line arguments (not used)
+	 */
+	public void drawScoreBoard() {
+		
+		 rectMode(CORNER);
+		  if(highscoreReached){
+		    fill(255, 243, 20);
+		  }
+		  else fill(255);
+		  stroke(0);
+		  rect(sizeX-sizeX/6,8,95,30);
+		  fill(0);
+		  textSize(12);
+		  text("Highscore: "+highscore,sizeX-50,25);
+		  rectMode(CORNER);
+		  textAlign(CENTER);
+		  textSize(36);
+		  text(score,sizeX/2,50);
+		  fill(255);
+	}
+	
+	/**
+	 * This method detects whether the player, while passing through the obstacle, has collided with the obstacle
+	 * @param args any command line arguments (not used)
+	 */
 	public boolean collision(){
 		
 		//PLAYER
-		  int frontOfPlayer = player1.getPlayerX()+player1.getPlayerWidth();
-		  int backOfPlayer = player1.getPlayerX();
-		  int topOfPlayer = player1.getPlayerY();
-		  int bottomOfPlayer = player1.getPlayerY() + player1.getPlayerHeight();
+		  int frontOfPlayer = player1.getPosX()+player1.getWidth()/2;
+		  int backOfPlayer = player1.getPosX()-player1.getWidth()/2;
+		  int topOfPlayer = player1.getPosY()-player1.getHeight()/2;
+		  int bottomOfPlayer = player1.getPosY() + player1.getHeight()/2;
 		 
 		  //OBSTACLE
 		  for(int i = 0;i<newWall.length;i++) {
-			  int frontOfObstacle = newWall[i].getPosX();
-			  int backOfObstacle = newWall[i].getPosX() + newWall[i].getWidth();
-			  int bottomOfObstacle = newWall[i].getPosY() + newWall[i].getHeight();
-			  int topOfObstacle = newWall[i].getPosY();
+			  double frontOfObstacle = newWall[i].getPosX()-newWall[i].getWidth()/2;
+			  double backOfObstacle = newWall[i].getPosX() + newWall[i].getWidth()/2;
+			  double bottomOfObstacle = newWall[i].getPosY() + newWall[i].getHeight()/2;
+			  double topOfObstacle = newWall[i].getPosY()-newWall[i].getHeight()/2;
 			  
 			  if(frontOfPlayer >= frontOfObstacle && backOfPlayer <= backOfObstacle) {
 				  if((topOfPlayer <= bottomOfObstacle && topOfPlayer >= topOfObstacle)||(bottomOfPlayer <= bottomOfObstacle && bottomOfPlayer >= topOfObstacle)) {
-					  System.out.println("Collision");
-					  System.out.println(newWall[i].getValue());
 					  if(newWall[i].getValue()==1)return true;
-					  else if(newWall[i].getValue()==2 && !(player1.getPlayerShape() == "Square"))return true;
-					  else if(newWall[i].getValue()==3 && !(player1.getPlayerShape() == "Triangle"))return true;
-					  else if(newWall[i].getValue()==4 && !(player1.getPlayerShape() == "Circle"))return true;
+					  else if(newWall[i].getValue()==2 && !(player1.getShape() == "Square"))return true;
+					  else if(newWall[i].getValue()==3 && !(player1.getShape() == "Triangle"))return true;
+					  else if(newWall[i].getValue()==4 && !(player1.getShape() == "Circle"))return true;
 				  }
 			  } 
 		  }
-		 
 		  return false;
 	}
 	
-	public void gameReset(){
-		  player1.setPlayerY(0);
-		  obstacle1.setPosX(leftWall*2);
-		  gameOver = false;
-		  f = 0;
-		  score = 0;
-		  highscoreReached = false;
-		  collision = false;
+	/**
+	 * This method draws the gameOver message in the window ("GAME OVER. PRESS TAB TO START AGAIN")
+	 * 
+	 * @param args any command line arguments (not used)
+	 */
+	public void gameOverMessage(){
+		stroke(255);
+		fill(0);
+		rectMode(CENTER);
+		rect(sizeX/2,sizeY/2,sizeX,sizeY);
+		//rectMode(CORNER);
+		fill(255);
+		textAlign(CENTER);
+		textSize(60);
+		text("GAME OVER",sizeX/2,sizeY/2);
+		textSize(20);
+		text("Press TAB to replay",sizeX/2,sizeY-60);
+		fill(255);
+	}
+	
+	/**
+	 * This method updates the Obstacle X position (moving to the left)
+	 * If the Obstacle hits the left wall, the player scores a point, a new wall layout is generated and... 
+	 * ...the obstacle's x position is set to behind the right wall
+	 * @param args any command line arguments (not used)
+	 */
+	public void updateObstacleX(){
+		
+		obstacle1.setPosX(obstacle1.getPosX()-obstacle1.getSpeed());
+		if(obstacle1.getPosX() < -obstacle1.getWidth()) {
+			score+=1;
+			if(score%10 != 0)obstacle1.setPosX(sizeX+obstacle1.getWidth()*2);
+			else obstacle1.setPosX(sizeX*3);
+			if(score>=40) {
+				newWall = obstacle1.generateNewWall();
+				obstacle1.setSpeed(7);
+			}
+			else if(score>=30)newWall = obstacle1.generateNewWall(2);
+			else if(score>=20)newWall = obstacle1.generateNewWall(1);
+			else if(score>=10)newWall = obstacle1.generateNewWall(3);
+			else if(score<10)newWall = obstacle1.generateNewWall();
+				
+		}
+	}
+	
+	/**
+	 * This method updates the Player Y position (moving up or down) based on keyPresses (these movements are different for the different shapes)
+	 * 
+	 * If the Player hits the ceiling, maxHeight is reached, if the player hits the floor, minHeight is reached otherwise they are false
+	 * ...the obstacle's x position is set to behind the right wall
+	 * @param args any command line arguments (not used)
+	 */
+	public void updatePlayerY(){
+		
+		
+				
+		//REACHED MAX HEIGHT
+		if( player1.getPosY() <= player_y_values[NUM_LAYERS-1]) {
+			player1.setReachedMaxHeight(true);
+			//player1.setCurrentLayer(NUM_LAYERS-1);
+		}
+		else player1.setReachedMinHeight(false);
+		
+		//CANNOT MOVE PAST sizeY
+		if(player1.getPosY() >= player_y_values[0]) {
+			player1.setReachedMinHeight(true);
+			//player1.setCurrentLayer(0);
+			
+		}
+		else player1.setReachedMaxHeight(false);
+		
+		//TRIANGLE && SQUARE MOVEMENT
+		if(!player1.getShape().equalsIgnoreCase("Circle")) {
+			//int closestLayer = findClosestLayer(player1.getPosY());
+			int closestLayer = findClosestLayer_R(player_y_values,player1.getPosY());
+			//player1.setCurrentLayer((closestLayer+layerHeight/2)/NUM_LAYERS);
+			
+			player1.setPosY(closestLayer);
+			
+			if(player1.getPosY()<=player_y_values[NUM_LAYERS-1])player1.setPosY(player_y_values[NUM_LAYERS-1]);
+			
+		}
+		
+		//CIRCLE MOVEMENT
+		else {
+			
+			if(keyPressed && keyCode == UP)player1.setPosY(player1.getPosY()-player1.getCircleJumpSpeed());
+		    else player1.setPosY(player1.getPosY()+player1.getCircleFallSpeed());
+	
+			
+			if(player1.getPosY()>=player_y_values[0])player1.setPosY(player_y_values[0]);
+			if(player1.getPosY()<=player_y_values[NUM_LAYERS-1])player1.setPosY(player_y_values[NUM_LAYERS-1]);
+			
+		}
+		
+	}
+	
+	/**
+	 * This method updates the Player Y position (moving up or down) based on keyPresses (these movements are different for the different shapes)
+	 * 
+	 * If the Player hits the ceiling, maxHeight is reached, if the player hits the floor, minHeight is reached otherwise they are false
+	 * ...the obstacle's x position is set to behind the right wall
+	 * @param args any command line arguments (not used)
+	 */
+	public int findClosestLayer(int playerY) {
+		
+		//IF NUMBER > 325
+		if(playerY > player_y_values[0]) {
+			player1.setCurrentLayer(0);
+			return player_y_values[0];
+		}
+		//IF NUMBER < 25
+		else if(playerY < player_y_values[player_y_values.length-1]) {
+			player1.setCurrentLayer(NUM_LAYERS-1);
+			return player_y_values[NUM_LAYERS-1];
 		}
 	
-	public void gameOverMessage(){
-		  stroke(0);
-		  rectMode(CENTER);
-		  rect(rightWall/2,ceiling/2,rightWall/2,ceiling/2);
-		  rectMode(CORNER);
-		  fill(0);
-		  textAlign(CENTER);
-		  textSize(20);
-		  text("GAME OVER",rightWall/2,ceiling/2);
-		  textSize(14);
-		  text("Press TAB to replay",rightWall/2,ceiling/2+30);
-		  fill(255);
+		
+		else {
+			for(int i = 0;i < NUM_LAYERS-1;i++) {
+				
+				if(playerY > player_y_values[i]) {
+					if(playerY-player_y_values[i] <= player_y_values[i-1]-playerY) {
+						player1.setCurrentLayer(i);
+						return player_y_values[i];
+					}
+					else{
+						player1.setCurrentLayer(i-1);
+						return player_y_values[i-1];
+					}
+				}
+			}	
 		}
+		return 0;
+	}
+	
+	
+	/**
+	 * This method updates the Player Y position (moving up or down) based on keyPresses (these movements are different for the different shapes)
+	 * 
+	 * If the Player hits the ceiling, maxHeight is reached, if the player hits the floor, minHeight is reached otherwise they are false
+	 * ...the obstacle's x position is set to behind the right wall
+	 * @param args any command line arguments (not used)
+	 */
+	public int findClosestLayer_R(int[] y_values,int target) {
+		
+		if(y_values.length==1)return y_values[0];
+		
+		//if sorted
+		int m = y_values.length/2;
+		int mid = y_values[m];
+		
+		if(target == mid) return mid;
+		
+		int[] lowerHalf = Arrays.copyOfRange(y_values, 0, m);
+		int[] upperHalf = Arrays.copyOfRange(y_values, m, y_values.length);
+		
+		
+		if(target < mid) return findClosestLayer_R(upperHalf,target);
+		
+		else return findClosestLayer_R(lowerHalf,target);
+		
+		
+	}
+	
+
+	/**
+	 * This method updates the score and checks if the highscore was reached (Recorded in a boolean)
+	 * 
+	 * @param args any command line arguments (not used)
+	 */
+	public void updateScore() {
+		if (score!= 0 && score >= highscore) {
+			highscore = score;
+			highscoreReached = true;
+		}
+	}
+	
+	/**
+	 * This method overwrites the Processing keyTyped() method to introduce changing shapes and moving objects
+	 * @param args any command line arguments (not used)
+	 */
+	public void keyPressed() {
+		//MOVEMENT
+		if(!gameOver) {
+			//changes shape
+			if(key == 'c') {
+				if(player1.getShape().equalsIgnoreCase("Square")) {
+					player1.setShape("Triangle");
+					
+				}
+				else if (player1.getShape().equalsIgnoreCase("Triangle")) {
+					player1.setShape("Circle");
+				
+				}
+				else if (player1.getShape().equalsIgnoreCase("Circle")) {
+					player1.setShape("Square");
+				}
+				player1.debugUpdate();
+			}
+//			int added_speed = 0;
+//			if(keyCode == RIGHT || keyCode == LEFT) {
+//				
+//				if(keyCode == RIGHT)added_speed += 1;
+//				else if(keyCode == LEFT) added_speed -=1;
+//				obstacle1.setSpeed(obstacle1.getSpeed()+added_speed);
+//			}
+//			else
+//				obstacle1.setSpeed(4);
+			
+			//TRIANGLE
+			if(player1.getShape() == "Triangle") {
+				//GENERAL MOVEMENT
+				if(keyCode == UP) {
+					player1.setUpsidedown(true);
+					player1.setPosY(player_y_values[NUM_LAYERS-1]);
+					//player1.setReachedMaxHeight(true);
+					//player1.moveToLayer(topLayer);
+				}
+				else if(keyCode == DOWN) {
+					player1.setUpsidedown(false);
+					player1.setPosY(player_y_values[0]);
+					//player1.setReachedMinHeight(true);
+					//player1.moveToLayer(bottomLayer);
+				}
+			}
+			
+			//SQUARE
+			else if(player1.getShape() == "Square") {
+				//BELOW HAS ERROR PLEASE HELP
+				if(!player1.isReachedMaxHeight() && !(player1.getCurrentLayer() == NUM_LAYERS-1) && keyCode == UP) {
+					player1.setCurrentLayer(player1.getCurrentLayer()+1);
+					player1.setPosY(player_y_values[player1.getCurrentLayer()]);
+				}
+				else if(!player1.isReachedMinHeight() && player1.getCurrentLayer()!=0 && keyCode == DOWN) {
+					player1.setCurrentLayer(player1.getCurrentLayer()-1);
+					player1.setPosY(player_y_values[player1.getCurrentLayer()]);
+				}
+				//else if(key == ' ')System.out.println("SHOOTING BULLET!");
+				
+			}
+			
+			//CIRCLE
+			else if(player1.getShape() == "Circle") {
+				if(keyCode == UP) player1.setPosY(player1.getPosY()-player1.getCircleJumpSpeed());
+				else if(keyCode == DOWN) player1.setPosY(player1.getPosY()+player1.getCircleJumpSpeed());
+				if(!player1.isReachedMinHeight())player1.setPosY(player1.getPosY()+player1.getCircleFallSpeed());
+			}
+		}
+		else {
+			if(keyCode == TAB)gameReset();
+		}
+	}
+	
+	/**
+	 * This method resets the game so that it appears as though the player is starting anew.
+	 * Every variable is reset except for highScore, which is never reset
+	 * 
+	 * @param args any command line arguments (not used)
+	 */
+	public void gameReset(){
+		newWall = obstacle1.generateNewWall();
+		obstacle1.setSpeed(4.7);
+		player1.setShape("Circle");
+		player1.setPosY(sizeY-100);
+		obstacle1.setPosX(sizeX*2);
+		gameOver = false;
+		score = 0;
+		highscoreReached = false;
+		collision = false;
+	}
 	
 	
 }
