@@ -99,10 +99,10 @@ public class Obstacle {
 	}
 	
 	//CONSTRUCTOR 
-	public Obstacle(double sizeX,int sizeY) {
-		this.posX = sizeX*2;
+	public Obstacle() {
+		this.posX = GameWindow.SIZE_X;
 		this.width = 50;
-		this.height = sizeY;
+		this.height = GameWindow.SIZE_Y;
 		this.speed = speed;
 		
 	}
