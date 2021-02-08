@@ -7,7 +7,6 @@ public class Practice {
 	int sizeX = 600; 
 	int numLayers = 8;
 	int[] layer_y_pos = new int[numLayers];//{25,75,115...375}
-	//375,
 	
 	
 	public void populateLayersY() {

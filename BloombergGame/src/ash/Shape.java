@@ -1,19 +1,24 @@
 package ash;
 
+/**
+ * Obstacle class that generates obstacles in the GameWindow
+ * @author Asher Sebban
+ * @version 2
+ */
 public abstract class Shape {
 
-	private int sizeOffset = 10;
+	private int sizeOffset = 10; //Makes players slightly thinner than the layers so they dont touch when passing through
 	protected String name;
 	protected int type;
 	protected int height;
 	protected int width;
-	protected int[] fill = {0,0,0};
-	protected double jumpSpeed;
-	protected double fallSpeed;
-	protected boolean upsidedown;
+	protected int[] fill = {0,0,0}; //allows inheriting classes to only change one color index
+	protected double jumpSpeed; //circle only
+	protected double fallSpeed; //circle only
+	protected boolean upsidedown; //triangle only
 	
 	
-	//CONSTRUCTRO
+	//CONSTRUCTOR
 	public Shape() {
 		this.height = (GameWindow.SIZE_Y/GameWindow.NUM_LAYERS)-sizeOffset;
 		this.width = (GameWindow.SIZE_Y/GameWindow.NUM_LAYERS)-sizeOffset;

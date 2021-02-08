@@ -1,5 +1,10 @@
 package ash;
 
+/**
+ * Obstacle class that generates obstacles in the GameWindow
+ * @author Asher Sebban
+ * @version 4
+ */
 public class Player {
 
 	//player variables
@@ -28,15 +33,17 @@ public class Player {
 	}//end of constructor
 	
 	
-	//USED FOR DEBUGGING
+	/**
+	 * This method prints player shape, player Y pos, current layer, and whether the player has reached max or min height
+	 * USED FOR DEBUGGING
+	 */
 	public void debugUpdate() {
 		System.out.println("Shape: "+shapes[currentShape].getName());
 		System.out.print(" posY: "+posY);
 		System.out.print(" currentLayer: "+currentLayer);
 		if(reachedMaxHeight)System.out.print(" max: "+reachedMaxHeight);
 		if(reachedMinHeight)System.out.print(" min: "+reachedMinHeight);
-		System.out.println();
-				
+		System.out.println();	
 	}
 	
 	//GETTERS AND SETTERS
